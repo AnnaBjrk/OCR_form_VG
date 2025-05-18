@@ -1,0 +1,12 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+venv/
+venv
+/venv   
+debug_rotated_original
+/debug_rotated_original
+debug_rotated_original/
+results
+results/
+/results
+__pycache__/
+__pycache__git

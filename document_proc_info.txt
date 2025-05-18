@@ -1,0 +1,53 @@
+I understand you don't want a script just yet. Let me explain the current implementation and what we can do next:
+
+The `DocumentProcessor` class I've created includes all the preprocessing steps you requested:
+
+1. **Brusreducering (Noise Reduction)**: Implemented in `reduce_noise()` using both Gaussian blur and bilateral filtering for optimal noise removal while preserving text edges.
+
+2. **Skevhetskorrigering (Skew Correction)**: Implemented in `correct_skew()` which automatically detects document rotation and corrects it.
+
+3. **Kontrastförbättring (Contrast Enhancement)**: Implemented in `enhance_contrast()` using CLAHE (Contrast Limited Adaptive Histogram Equalization) in LAB color space.
+
+4. **Storleksnormalisering (Size Normalization)**: Implemented in `normalize_size()` which scales images to a consistent width while maintaining aspect ratio.
+
+5. **Ljussättningskorrigering (Lighting Correction)**: Implemented in `correct_lighting()` using adaptive histogram equalization.
+
+6. **Kantskärpning (Edge Sharpening)**: Implemented in `sharpen_edges()` using a custom sharpening kernel.
+
+7. **Gråskala (Grayscale Conversion)**: Implemented in `convert_to_grayscale()`.
+
+The class is set up to use EasyOCR with Swedish language support (`['sv']`). Each preprocessing step can be used individually or all at once through the `process_document()` method.
+
+
+
+Ah, perfect! Now we have clear distinguishing features for each page. Let me update the `DocumentProcessor` class to use these specific markers for page identification:
+
+
+
+I've updated the `DocumentProcessor` class with a new page identification method that uses the specific markers we know about:
+
+1. For Page 1:
+   - Title: "Aktivitetsrapport"
+   - Page number: "Sida 1(2)"
+
+2. For Page 2:
+   - Title: "Har du anmält intresse för ett jobb som inte annonserats?"
+   - Page number: "Sida 2(2)"
+
+The new `identify_page()` method:
+1. Performs OCR on the image
+2. Looks for these specific markers in the detected text
+3. Returns the page number based on which markers are found
+4. If no exact matches are found, it uses a scoring system to determine the most likely page
+
+This approach is more reliable than template matching because:
+1. It uses actual text content rather than image patterns
+2. It's more robust to variations in scanning quality
+3. It can handle slight rotations or scaling issues
+4. It doesn't require template images
+
+Would you like me to:
+1. Add more specific markers for each page?
+2. Add confidence scoring for the page identification?
+3. Add visualization of the detected markers?
+4. Or would you like to test this implementation first?

@@ -1,0 +1,94 @@
+{
+    "aktivitetsrapport": {
+        "metadata": {
+            "formular_id": "Af 00331 8.0",
+            "version": "MB0002372-01",
+            "skanningsdatum": "2025-05-17",
+            "processad": true
+        },
+        "personuppgifter": {
+            "fornamn": "Maria",
+            "efternamn": "Johansson",
+            "personnummer": "19890215-1234"
+        },
+        "rapportperiod": {
+            "manad": "04",
+            "ar": "2025",
+            "period_text": "April 2025"
+        },
+        "aktiviteter": {
+            "annonserade_jobb": [
+                {
+                    "datum": "2025-04-05",
+                    "tjanst": "Frontend-utvecklare",
+                    "arbetsgivare": "TechSolutions AB",
+                    "arbetsort": "Stockholm"
+                },
+                {
+                    "datum": "2025-04-08",
+                    "tjanst": "UX-designer",
+                    "arbetsgivare": "DesignByrån",
+                    "arbetsort": "Göteborg"
+                },
+                {
+                    "datum": "2025-04-15",
+                    "tjanst": "Webbprogrammerare",
+                    "arbetsgivare": "Webbutveckling Sverige AB",
+                    "arbetsort": "Malmö"
+                }
+            ],
+            "intresseanmalningar": [
+                {
+                    "datum": "2025-04-10",
+                    "tjanst": "Systemarkitekt",
+                    "arbetsgivare": "IT-Konsulterna AB",
+                    "arbetsort": "Stockholm"
+                },
+                {
+                    "datum": "2025-04-20",
+                    "tjanst": "Projektledare IT",
+                    "arbetsgivare": "Scania",
+                    "arbetsort": "Södertälje"
+                }
+            ],
+            "intervjuer": [
+                {
+                    "datum": "2025-04-22",
+                    "tjanst": "Frontend-utvecklare",
+                    "arbetsgivare": "TechSolutions AB",
+                    "arbetsort": "Stockholm"
+                }
+            ],
+            "ovriga_aktiviteter": [
+                {
+                    "datum": "2025-04-12",
+                    "beskrivning": "LinkedIn-profil uppdaterad med nya kompetenser och certifieringar"
+                },
+                {
+                    "datum": "2025-04-18",
+                    "beskrivning": "Deltagit i rekryteringsmässa på Stockholmsmässan"
+                },
+                {
+                    "datum": "2025-04-25",
+                    "beskrivning": "Genomfört online-kurs i React och TypeScript"
+                }
+            ]
+        },
+        "sammanfattning": {
+            "totalt_antal_aktiviteter": 11,
+            "antal_annonserade_jobb": 3,
+            "antal_intresseanmalningar": 2,
+            "antal_intervjuer": 1,
+            "antal_ovriga_aktiviteter": 3
+        },
+        "rapportstatus": {
+            "ingen_aktivitet_rapporterad": false,
+            "komplett": true
+        },
+        "underskrift": {
+            "datum": "2025-05-02",
+            "namnfortydligande": "Maria Johansson",
+            "signerad": true
+        }
+    }
+}
