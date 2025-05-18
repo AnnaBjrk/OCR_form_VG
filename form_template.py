@@ -192,38 +192,38 @@ class FormTemplate:
                 "form_title": Field(
                     name="Aktivitetsrapport",
                     field_type=FieldType.HEADER,
-                    position=(100, 200),
-                    size=(300, 50)
+                    position=(150, 290),
+                    size=(350, 60)
                 ),
                 "page_number": Field(
                     name="Sida 1(2)",
                     field_type=FieldType.TEXT,
-                    position=(1030, 30),
-                    size=(100, 30)
+                    position=(1430, 60),
+                    size=(150, 30)
                 ),
 
                 # Personal information section
                 "first_name": Field(
                     name="Förnamn",
                     field_type=FieldType.ALPHABETIC,
-                    position=(100, 300),
-                    size=(350, 80),
+                    position=(150, 420),
+                    size=(480, 90),
                     required=True,
                     max_length=50
                 ),
                 "last_name": Field(
                     name="Efternamn",
                     field_type=FieldType.ALPHABETIC,
-                    position=(440, 300),
-                    size=(350, 80),
+                    position=(620, 420),
+                    size=(480, 90),
                     required=True,
                     max_length=50
                 ),
                 "personal_number": Field(
                     name="Personnummer/Samordningsnummer",
                     field_type=FieldType.ALPHANUMERIC,
-                    position=(790, 300),
-                    size=(350, 80),
+                    position=(1100, 420),
+                    size=(480, 90),
                     format="ååååmmdd-xxxx eller ååmmdd-xxxx",
                     required=True,
                     validation_pattern=r"^\d{8}-\d{4}$|^\d{6}-\d{4}$"
@@ -233,8 +233,8 @@ class FormTemplate:
                 "month": Field(
                     name="Månad",
                     field_type=FieldType.NUMERIC,
-                    position=(100, 440),
-                    size=(25, 30),
+                    position=(150, 610),
+                    size=(90, 50),
                     format="MM",
                     required=True,
                     validation_pattern=r"^(0[1-9]|1[0-2])$"
@@ -242,8 +242,8 @@ class FormTemplate:
                 "year": Field(
                     name="År",
                     field_type=FieldType.NUMERIC,
-                    position=(130, 440),
-                    size=(25, 30),
+                    position=(240, 610),
+                    size=(180, 50),
                     format="YYYY",
                     required=True,
                     validation_pattern=r"^\d{4}$"
@@ -252,17 +252,17 @@ class FormTemplate:
             "tables": {
                 "advertised_jobs": Table(
                     name="Annonserade jobb",
-                    position=(100, 585),
+                    position=(145, 810),
                     columns=[
-                        TableColumn("Datum", FieldType.DATE, 100, "YYYY-MM-DD",
+                        TableColumn("Datum", FieldType.DATE, 175, "YYYY-MM-DD",
                                     r"^\d{4}-\d{2}-\d{2}$"),
                         TableColumn("Vilket jobb har du sökt?",
-                                    FieldType.ALPHABETIC, 230),
-                        TableColumn("Arbetsgivare", FieldType.ALPHABETIC, 620),
-                        TableColumn("Arbetsort", FieldType.ALPHABETIC, 880)
+                                    FieldType.ALPHABETIC, 530),
+                        TableColumn("Arbetsgivare", FieldType.ALPHABETIC, 350),
+                        TableColumn("Arbetsort", FieldType.ALPHABETIC, 360)
                     ],
                     num_rows=22,
-                    row_height=50,
+                    row_height=70,
                     required=True
                 )
             }
@@ -274,22 +274,22 @@ class FormTemplate:
                 "page_title": Field(
                     name="Har du anmält intresse för ett jobb som inte annonserats?",
                     field_type=FieldType.HEADER,
-                    position=(100, 100),
-                    size=(800, 50)
+                    position=(150, 150),
+                    size=(1060, 50)
                 ),
                 "page_number": Field(
                     name="Sida 2(2)",
                     field_type=FieldType.TEXT,
-                    position=(1030, 30),
-                    size=(100, 40)
+                    position=(1420, 50),
+                    size=(130, 40)
                 ),
 
                 # Signature section
                 "signature_date": Field(
                     name="Datum",
                     field_type=FieldType.DATE,
-                    position=(100, 1520),
-                    size=(520, 50),
+                    position=(150, 2110),
+                    size=(720, 90),
                     format="YYYY-MM-DD",
                     required=True,
                     validation_pattern=r"^\d{4}-\d{2}-\d{2}$"
@@ -297,16 +297,16 @@ class FormTemplate:
                 "name_clarification": Field(
                     name="Namnförtydligande",
                     field_type=FieldType.ALPHABETIC,
-                    position=(100, 1590),
-                    size=(520, 50),
+                    position=(150, 2200),
+                    size=(720, 90),
                     required=True,
                     max_length=100
                 ),
                 "signature": Field(
                     name="Namnteckning",
                     field_type=FieldType.SIGNATURE,
-                    position=(620, 1520),
-                    size=(520, 100),
+                    position=(860, 2110),
+                    size=(700, 180),
                     required=True
                 ),
 
@@ -314,51 +314,51 @@ class FormTemplate:
                 "nothing_to_report": CheckboxField(
                     name="Jag har inga sökta jobb, intervjuer eller aktiviteter att rapportera",
                     field_type=FieldType.CHECKBOX,
-                    position=(100, 1470),
-                    size=(25, 25),
+                    position=(150, 2030),
+                    size=(30, 30),
                     group="reporting_status"  # Group with other reporting status checkboxes
                 )
             },
             "tables": {
                 "unadvertised_jobs": Table(
                     name="Icke-annonserade jobb",
-                    position=(100, 190),
+                    position=(145, 260),
                     columns=[
-                        TableColumn("Datum", FieldType.DATE, 100, "YYYY-MM-DD",
+                        TableColumn("Datum", FieldType.DATE, 170, "YYYY-MM-DD",
                                     r"^\d{4}-\d{2}-\d{2}$"),
                         TableColumn(
-                            "Vilket jobb har du anmält intresse för?", FieldType.ALPHABETIC, 220),
-                        TableColumn("Arbetsgivare", FieldType.ALPHABETIC, 530),
-                        TableColumn("Arbetsort", FieldType.ALPHABETIC, 830)
+                            "Vilket jobb har du anmält intresse för?", FieldType.ALPHABETIC, 435),
+                        TableColumn("Arbetsgivare", FieldType.ALPHABETIC, 410),
+                        TableColumn("Arbetsort", FieldType.ALPHABETIC, 310)
                     ],
                     num_rows=7,
-                    row_height=50
+                    row_height=70
                 ),
                 "interviews": Table(
                     name="Intervjuer",
-                    position=(100, 620),
+                    position=(145, 870),
                     columns=[
-                        TableColumn("Datum", FieldType.DATE, 100, "YYYY-MM-DD",
+                        TableColumn("Datum", FieldType.DATE, 170, "YYYY-MM-DD",
                                     r"^\d{4}-\d{2}-\d{2}$"),
                         TableColumn("Vilket jobb gällde intervjun?",
-                                    FieldType.ALPHABETIC, 220),
-                        TableColumn("Arbetsgivare", FieldType.ALPHABETIC, 530),
-                        TableColumn("Arbetsort", FieldType.ALPHABETIC, 830)
+                                    FieldType.ALPHABETIC, 435),
+                        TableColumn("Arbetsgivare", FieldType.ALPHABETIC, 410),
+                        TableColumn("Arbetsort", FieldType.ALPHABETIC, 310)
                     ],
                     num_rows=6,
-                    row_height=50
+                    row_height=70
                 ),
                 "other_activities": Table(
                     name="Övriga aktiviteter",
-                    position=(100, 1060),
+                    position=(145, 1475),
                     columns=[
-                        TableColumn("Datum", FieldType.DATE, 100, "YYYY-MM-DD",
+                        TableColumn("Datum", FieldType.DATE, 200, "YYYY-MM-DD",
                                     r"^\d{4}-\d{2}-\d{2}$"),
                         TableColumn("Beskrivning av aktiviteten",
-                                    FieldType.ALPHABETIC, 260)
+                                    FieldType.ALPHABETIC, 1200)
                     ],
                     num_rows=7,
-                    row_height=50
+                    row_height=70
                 )
             }
         }

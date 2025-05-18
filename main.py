@@ -58,7 +58,7 @@ def process_forms(pdf_path: str, output_dir: str):
 
     # Initialize components
     pdf_processor = PDFProcessor()
-    template = FormTemplate()
+    template = FormTemplate(form_id="form1")
     form_processor = FormProcessor(template)
     result_processor = ResultProcessor(template)
 

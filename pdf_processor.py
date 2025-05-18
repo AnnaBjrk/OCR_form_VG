@@ -54,18 +54,8 @@ class PDFProcessor:
             os.makedirs(debug_dir, exist_ok=True)
             cv2.imwrite(f"{debug_dir}/page_{page_num + 1}_original.png", img)
 
-            # Apply initial preprocessing
-            # Convert to grayscale
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-            # Enhance contrast
-            enhanced = cv2.convertScaleAbs(gray, alpha=1.5, beta=0)
-
-            # Save preprocessed image
-            cv2.imwrite(
-                f"{debug_dir}/page_{page_num + 1}_preprocessed.png", enhanced)
-
-            self.images[page_num + 1] = enhanced  # Store grayscale image
+            # Store the original color image
+            self.images[page_num + 1] = img
             print(f"Page {page_num + 1} processed successfully")
 
         print("\nAll pages processed successfully!")

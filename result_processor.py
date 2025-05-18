@@ -68,26 +68,31 @@ class ResultProcessor:
         self.page_orientations = {}  # Store detected orientations
 
     def _calculate_image_quality(self, image: np.ndarray, x: int, y: int, w: int, h: int) -> float:
-        """Calculate image quality score for a field region."""
+        """Calculate basic image quality score for a field region."""
+        # Check if region is valid
+        if x < 0 or y < 0 or w <= 0 or h <= 0 or x + w > image.shape[1] or y + h > image.shape[0]:
+            return 0.0
+
         region = image[y:y+h, x:x+w]
+
+        # Check if region is empty
+        if region.size == 0:
+            return 0.0
 
         # Convert to grayscale if needed
         if len(region.shape) == 3:
             region = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
 
-        # Calculate various quality metrics
+        # Calculate basic quality metrics
         blur_score = cv2.Laplacian(region, cv2.CV_64F).var()
         contrast_score = np.std(region)
-        noise_score = np.mean(cv2.fastNlMeansDenoising(region) - region)
 
         # Normalize scores
         blur_score = min(blur_score / 100, 1.0)
         contrast_score = min(contrast_score / 128, 1.0)
-        noise_score = min(noise_score / 50, 1.0)
 
-        # Combine scores (weights can be adjusted)
-        quality_score = (0.4 * blur_score + 0.4 *
-                         contrast_score + 0.2 * (1 - noise_score))
+        # Combine scores (equal weights)
+        quality_score = 0.5 * blur_score + 0.5 * contrast_score
         return quality_score
 
     def _calculate_field_confidence(self,
@@ -640,6 +645,21 @@ class ResultProcessor:
                                 f"- Handwritten: {field_data['handwritten']}")
                             content_md.append("")
             content_md.append("")
+
+        # Add table cell results to the markdown output
+        for table_name, table in form_data['activities'].items():
+            if table:  # Check if the table has any entries
+                content_md.append(f"## {table_name}")
+                content_md.append("")
+                for i, row in enumerate(table, 1):
+                    if any(row.values()):  # Check if the row has any values
+                        content_md.append(f"### Row {i}")
+                        content_md.append("")
+                        for key, value in row.items():
+                            if value:  # Only show non-empty values
+                                content_md.append(f"**{key}:** {value}")
+                        content_md.append("")
+                content_md.append("")
 
         # Add status overview
         content_md.append("## Statusöversikt")

@@ -10,3 +10,12 @@ results/
 /results
 __pycache__/
 __pycache__git
+/models
+models/
+models
+debug_table_cells
+/debug_table_cells
+debug_table_cells/
+debug_preprocessing
+/debug_preprocessing
+debug_preprocessing/

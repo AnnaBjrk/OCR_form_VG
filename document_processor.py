@@ -50,11 +50,9 @@ class DocumentProcessor:
         return cv2.imread(image_path)
 
     def reduce_noise(self, image):
-        """Remove noise and spots from the image."""
-        # Apply Gaussian blur to reduce noise
-        denoised = cv2.GaussianBlur(image, (5, 5), 0)
-        # Apply bilateral filter to preserve edges while removing noise
-        denoised = cv2.bilateralFilter(denoised, 9, 75, 75)
+        """Apply minimal noise reduction."""
+        # Apply light Gaussian blur to reduce noise
+        denoised = cv2.GaussianBlur(image, (3, 3), 0)
         return denoised
 
     def correct_skew(self, image):
@@ -83,19 +81,15 @@ class DocumentProcessor:
         return rotated
 
     def enhance_contrast(self, image):
-        """Enhance contrast between text and background."""
-        # Convert to LAB color space
-        lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-        l, a, b = cv2.split(lab)
+        """Apply minimal contrast enhancement."""
+        # Convert to grayscale if needed
+        if len(image.shape) == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image.copy()
 
-        # Apply CLAHE to L channel
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
-        cl = clahe.apply(l)
-
-        # Merge channels and convert back to BGR
-        merged = cv2.merge((cl, a, b))
-        enhanced = cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
-
+        # Apply minimal contrast enhancement
+        enhanced = cv2.convertScaleAbs(gray, alpha=1.5, beta=0)
         return enhanced
 
     def normalize_size(self, image, target_width=1000):
@@ -243,7 +237,7 @@ class DocumentProcessor:
         return resized
 
     def process_document(self, image_path, apply_all=True):
-        """Process document with all preprocessing steps."""
+        """Process document with minimal preprocessing steps."""
         # Load image
         image = self.load_image(image_path)
         if image is None:
@@ -254,14 +248,10 @@ class DocumentProcessor:
             page_number = self.identify_page(image)
             print(f"Detected page {page_number}")
 
-            # Apply preprocessing steps
+            # Apply minimal preprocessing steps
             image = self.reduce_noise(image)
-            image = self.correct_skew_with_markers(image)
+            image = self.correct_skew(image)
             image = self.enhance_contrast(image)
-            image = self.normalize_form_size(image)
-            image = self.correct_lighting(image)
-            image = self.sharpen_edges(image)
-            image = self.convert_to_grayscale(image)
 
         return image
 

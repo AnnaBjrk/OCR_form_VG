@@ -29,7 +29,7 @@ class ProcessingConfig:
 
     def __post_init__(self):
         if self.ocr_languages is None:
-            self.ocr_languages = ['sv', 'en']
+            self.ocr_languages = ['sv']  # Only Swedish
 
 
 class FormProcessor:
@@ -64,49 +64,21 @@ class FormProcessor:
             raise
 
     def _preprocess_field_image(self, image: np.ndarray, field_type: FieldType) -> np.ndarray:
-        """Apply field-specific preprocessing."""
-        # Convert to grayscale
+        """Apply minimal preprocessing to field image."""
+        # Convert to grayscale if needed
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         else:
             gray = image.copy()
 
-        # Apply field-specific preprocessing
-        if field_type in [FieldType.DATE, FieldType.NUMERIC, FieldType.PERSONAL_NUMBER]:
-            # Enhance contrast for numbers
-            # Increased contrast and brightness
-            gray = cv2.convertScaleAbs(gray, alpha=3.0, beta=20)
-            # Apply adaptive thresholding for better number detection
-            binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                           cv2.THRESH_BINARY, 11, 2)
-            return binary
+        # Apply minimal contrast enhancement
+        gray = cv2.convertScaleAbs(gray, alpha=1.2, beta=10)
 
-        elif field_type in [FieldType.ALPHABETIC, FieldType.SWEDISH_TEXT]:
-            # Enhance for handwriting
-            # Apply bilateral filter to reduce noise while preserving edges
-            filtered = cv2.bilateralFilter(gray, 9, 75, 75)
-            # Enhance contrast
-            # Increased contrast and brightness
-            enhanced = cv2.convertScaleAbs(filtered, alpha=3.0, beta=20)
-            # Apply adaptive thresholding
-            binary = cv2.adaptiveThreshold(enhanced, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                           cv2.THRESH_BINARY, 11, 2)
-            # Dilate to connect broken characters
-            kernel = np.ones((2, 2), np.uint8)
-            dilated = cv2.dilate(binary, kernel, iterations=1)
-            return dilated
+        # Apply adaptive thresholding for better text detection
+        binary = cv2.adaptiveThreshold(
+            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
 
-        else:
-            # Default preprocessing for other field types
-            # Apply bilateral filter
-            filtered = cv2.bilateralFilter(gray, 9, 75, 75)
-            # Enhance contrast
-            # Increased contrast and brightness
-            enhanced = cv2.convertScaleAbs(filtered, alpha=3.0, beta=20)
-            # Apply adaptive thresholding
-            binary = cv2.adaptiveThreshold(enhanced, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                           cv2.THRESH_BINARY, 11, 2)
-            return binary
+        return binary
 
     def _expand_field_region(self, image: np.ndarray, x: int, y: int, w: int, h: int) -> Tuple[int, int, int, int]:
         """Expand field region to include overlapping text."""
@@ -149,7 +121,7 @@ class FormProcessor:
         return x_min, y_min, x_max - x_min, y_max - y_min
 
     def process_text_field(self, image: np.ndarray, field_name: str, page_number: int) -> Dict[str, str]:
-        """Process a text field with optimized settings."""
+        """Process a text field with minimal preprocessing."""
         fields = self.template.get_page_fields(page_number)
         if field_name not in fields:
             return {"value": "", "handwritten_text": ""}
@@ -157,9 +129,6 @@ class FormProcessor:
         field = fields[field_name]
         x, y = field.position
         w, h = field.size
-
-        # Expand field region to include overlapping text
-        x, y, w, h = self._expand_field_region(image, x, y, w, h)
 
         # Extract field region
         field_image = image[y:y+h, x:x+w]
@@ -173,7 +142,7 @@ class FormProcessor:
         os.makedirs(debug_dir, exist_ok=True)
         cv2.imwrite(f"{debug_dir}/{field_name}_original.png", field_image)
 
-        # Apply field-specific preprocessing
+        # Apply preprocessing
         processed_image = self._preprocess_field_image(
             field_image, field.field_type)
 
@@ -182,12 +151,12 @@ class FormProcessor:
                     processed_image)
 
         try:
-            # Perform OCR with field-specific settings
+            # Perform OCR with both original and preprocessed images
             print(f"\nProcessing field {field_name}...")
             print(f"Field type: {field.field_type}")
             print(f"Field region: x={x}, y={y}, w={w}, h={h}")
 
-            # Try both the original and preprocessed image
+            # Try OCR on both original and preprocessed images
             results = self.reader.readtext(field_image, detail=1)
             if not results:
                 results = self.reader.readtext(processed_image, detail=1)
@@ -320,63 +289,174 @@ class FormProcessor:
                 field_result = self.process_text_field(
                     aligned_image, field_name, page_number)
                 results[field_name] = field_result
-                # Debug print
                 print(f"Processed field {field_name}: {field_result}")
 
-        # Process table cells
+        # Process table cells with enhanced debugging
         tables = self.template.get_page_tables(page_number)
         for table_name, table in tables.items():
+            print(f"\nProcessing table: {table_name}")
+            print(f"Table position: {table.position}")
+            print(f"Number of rows: {table.num_rows}")
+            print(f"Row height: {table.row_height}")
+
             for row in range(table.num_rows):
                 for col, column in enumerate(table.columns):
                     field_name = f"{table_name}_row{row}_col{col}"
                     x, y = self.template.get_table_cell_coordinates(
                         table_name, row, col, page_number)
+
                     if x is not None and y is not None:
                         w, h = column.width, table.row_height
+                        print(f"\nProcessing cell {field_name}:")
+                        print(f"Position: x={x}, y={y}, width={w}, height={h}")
+
+                        # Extract and save cell image for debugging
                         cell_image = aligned_image[y:y+h, x:x+w]
-                        cell_result = self.process_text_field(
-                            cell_image, field_name, page_number)
-                        results[field_name] = cell_result
-                        # Debug print
+                        debug_dir = "debug_table_cells"
+                        os.makedirs(debug_dir, exist_ok=True)
+                        cv2.imwrite(
+                            f"{debug_dir}/{field_name}.png", cell_image)
+
+                        # Process the cell with OCR directly
+                        try:
+                            # Apply preprocessing to the cell image
+                            processed_cell = self._preprocess_field_image(
+                                cell_image, column.field_type)
+
+                            # Try OCR on both original and preprocessed images
+                            ocr_results = self.reader.readtext(
+                                cell_image, detail=1)
+                            if not ocr_results:
+                                ocr_results = self.reader.readtext(
+                                    processed_cell, detail=1)
+
+                            # Get the raw OCR results as handwritten text
+                            handwritten_text = " ".join(
+                                [result[1] for result in ocr_results])
+
+                            # Apply field-specific post-processing based on column type
+                            if column.field_type == FieldType.DATE:
+                                processed_text = self._normalize_date(
+                                    handwritten_text)
+                            elif column.field_type == FieldType.PERSONAL_NUMBER:
+                                processed_text = self._normalize_personal_number(
+                                    handwritten_text)
+                            elif column.field_type == FieldType.POSTAL_CODE:
+                                processed_text = self._normalize_postal_code(
+                                    handwritten_text)
+                            else:
+                                processed_text = handwritten_text
+
+                            # Store the results
+                            results[field_name] = {
+                                "value": processed_text,
+                                "handwritten_text": handwritten_text
+                            }
+                            print(f"Cell OCR result: {results[field_name]}")
+                        except Exception as e:
+                            print(
+                                f"Error processing cell {field_name}: {str(e)}")
+                            results[field_name] = {
+                                "value": "", "handwritten_text": ""}
+                    else:
                         print(
-                            f"Processed table cell {field_name}: {cell_result}")
+                            f"Warning: Invalid coordinates for cell {field_name}")
 
         return results
 
+    def _draw_grid(self, image: np.ndarray, grid_size: int = 100) -> np.ndarray:
+        """Draw a grid overlay on the image."""
+        height, width = image.shape[:2]
+        grid_image = image.copy()
+
+        # Draw vertical lines
+        for x in range(0, width, grid_size):
+            cv2.line(grid_image, (x, 0), (x, height), (128, 128, 128), 1)
+            # Add x-coordinate labels
+            cv2.putText(grid_image, str(x), (x + 5, 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (128, 128, 128), 1)
+
+        # Draw horizontal lines
+        for y in range(0, height, grid_size):
+            cv2.line(grid_image, (0, y), (width, y), (128, 128, 128), 1)
+            # Add y-coordinate labels
+            cv2.putText(grid_image, str(y), (5, y + 15),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (128, 128, 128), 1)
+
+        return grid_image
+
     def _align_image(self, image: np.ndarray, page_number: int) -> np.ndarray:
         """Align the image using template matching."""
-        # Get the template image for this page
-        template_image = self.template.get_template_image(page_number)
-        if template_image is None:
+        print(f"\n[process_form] Aligning image for page {page_number}...")
+
+        # Create debug directory if it doesn't exist
+        debug_dir = "debug_rotated_original"
+        os.makedirs(debug_dir, exist_ok=True)
+
+        # Save original image for debugging
+        cv2.imwrite(f"{debug_dir}/page_{page_number}_original.png", image)
+
+        # Get template image for this page
+        template_path = f"templates/form1_page{page_number}.png"
+        if not os.path.exists(template_path):
+            print(f"Warning: Template image not found at {template_path}")
+            return image
+
+        template = cv2.imread(template_path)
+        if template is None:
             print(
-                f"No template image found for page {page_number}, using original image")
+                f"Warning: Could not read template image from {template_path}")
             return image
 
-        # Create a temporary file for the image
-        temp_dir = "temp"
-        os.makedirs(temp_dir, exist_ok=True)
-        temp_input = os.path.join(temp_dir, "temp_input.png")
-        temp_output = os.path.join(temp_dir, "temp_output.png")
+        # Save template image for debugging
+        cv2.imwrite(f"{debug_dir}/page_{page_number}_template.png", template)
 
-        # Save the image temporarily
-        cv2.imwrite(temp_input, image)
+        # Align the image
+        aligned_image, success = self.aligner.align_form(image, template)
 
-        try:
-            # Use FormAligner to align the image
-            aligned_image = self.aligner.align_form(
-                image, template_image, temp_output)
-
-            # Clean up temporary files
-            try:
-                os.remove(temp_input)
-                os.remove(temp_output)
-            except:
-                pass
-
-            return aligned_image
-        except Exception as e:
-            print(f"Error aligning image: {str(e)}")
+        if not success:
+            print(f"Warning: Image alignment failed for page {page_number}")
             return image
+
+        # Draw rectangles around all field regions
+        debug_image = aligned_image.copy()
+        fields = self.template.get_page_fields(page_number)
+        for field_name, field in fields.items():
+            x, y = field.position
+            w, h = field.size
+            cv2.rectangle(debug_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.putText(debug_image, field_name, (x, y - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+
+        # Draw rectangles around all table cells
+        tables = self.template.get_page_tables(page_number)
+        for table_name, table in tables.items():
+            for row_idx in range(table.num_rows):
+                for col_idx, column in enumerate(table.columns):
+                    x, y = self.template.get_table_cell_coordinates(
+                        table_name, row_idx, col_idx, page_number)
+                    if x is not None and y is not None:
+                        w, h = column.width, table.row_height
+                        cv2.rectangle(debug_image, (x, y),
+                                      (x + w, y + h), (255, 0, 0), 2)
+                        cv2.putText(debug_image, f"{table_name}_r{row_idx}_c{col_idx}", (
+                            x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+
+        # Add grid overlay
+        grid_image = self._draw_grid(debug_image)
+
+        # Save the debug image with rectangles and grid
+        cv2.imwrite(
+            f"{debug_dir}/page_{page_number}_aligned_with_regions.png", debug_image)
+        cv2.imwrite(
+            f"{debug_dir}/page_{page_number}_aligned_with_grid.png", grid_image)
+
+        # Save aligned image for debugging
+        cv2.imwrite(
+            f"{debug_dir}/page_{page_number}_aligned.png", aligned_image)
+
+        print(f"[process_form] Aligned image shape: {aligned_image.shape}")
+        return aligned_image
 
     def process_page(self, image: np.ndarray, page_number: int) -> Dict[str, Any]:
         """Process a page and extract all field values."""
