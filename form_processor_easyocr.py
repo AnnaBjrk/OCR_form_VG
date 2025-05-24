@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
-# Replace easyocr with paddleocr
-from paddleocr import PaddleOCR
+import easyocr
 from typing import Dict, List, Tuple, Optional, Union, Any
 from dataclasses import dataclass
 from form_template import FormTemplate, FieldType, CheckboxField
@@ -44,34 +43,22 @@ class FormProcessor:
         self.aligner = FormAligner()
         self._initialize_ocr()
 
-    def _initialize_ocr(self) -> None:
+    def _initialize_ocr(self) -> easyocr.Reader:
         """Initialize OCR with appropriate settings."""
         print("\nInitializing OCR...")
         print(f"Languages: {self.config.ocr_languages}")
         print(f"GPU enabled: {self.config.ocr_gpu}")
         print(f"Model storage: {self.config.ocr_model_storage}")
 
-        # Map Swedish to a language that PaddleOCR supports
-        # PaddleOCR doesn't directly support Swedish, so we'll use a similar language or multilingual model
-        lang_map = {
-            'sv': 'en'  # Map Swedish to English as a fallback or use 'latin' for European languages
-        }
-        
-        # Map the configured languages to PaddleOCR supported languages
-        paddle_langs = [lang_map.get(lang, lang) for lang in self.config.ocr_languages]
-        
         try:
-            # Initialize PaddleOCR
-            reader = PaddleOCR(
-                use_angle_cls=True,  # Enable text direction classification
-                lang=paddle_langs[0],  # PaddleOCR takes a single language string
-                use_gpu=self.config.ocr_gpu,
-                det_model_dir=os.path.join(self.config.ocr_model_storage, 'det'),
-                rec_model_dir=os.path.join(self.config.ocr_model_storage, 'rec'),
-                cls_model_dir=os.path.join(self.config.ocr_model_storage, 'cls')
+            reader = easyocr.Reader(
+                self.config.ocr_languages,
+                gpu=self.config.ocr_gpu,
+                model_storage_directory=self.config.ocr_model_storage
             )
             print("OCR initialization successful")
             self.reader = reader
+            return reader
         except Exception as e:
             print(f"Error initializing OCR: {str(e)}")
             raise
@@ -169,47 +156,24 @@ class FormProcessor:
             print(f"Field type: {field.field_type}")
             print(f"Field region: x={x}, y={y}, w={w}, h={h}")
 
-            # PaddleOCR expects a BGR image, so convert if needed
-            if len(field_image.shape) == 2:  # If grayscale
-                field_image_color = cv2.cvtColor(field_image, cv2.COLOR_GRAY2BGR)
-                processed_color = cv2.cvtColor(processed_image, cv2.COLOR_GRAY2BGR)
-            else:
-                field_image_color = field_image
-                processed_color = cv2.cvtColor(processed_image, cv2.COLOR_GRAY2BGR)
-
             # Try OCR on both original and preprocessed images
-            # PaddleOCR returns a list of [[[x1,y1],[x2,y2],[x3,y3],[x4,y4]], (text, confidence)]
-            results = self.reader.ocr(field_image_color, cls=True)
-            
-            # If no results, try with preprocessed image
-            if not results or not results[0]:
-                results = self.reader.ocr(processed_color, cls=True)
-
-            # Format PaddleOCR results
-            formatted_results = []
-            if results and len(results) > 0 and results[0]:
-                for line in results[0]:
-                    if len(line) == 2:  # Ensure the line has both bbox and (text, confidence)
-                        bbox, (text, confidence) = line
-                        formatted_results.append({
-                            'bbox': bbox,
-                            'text': text,
-                            'confidence': confidence
-                        })
+            results = self.reader.readtext(field_image, detail=1)
+            if not results:
+                results = self.reader.readtext(processed_image, detail=1)
 
             # Debug print raw OCR results
             print(f"Field {field_name} - Raw OCR results:")
-            for result in formatted_results:
+            for result in results:
                 print(
-                    f"  Text: {result['text']}, Confidence: {result['confidence']}, Box: {result['bbox']}")
+                    f"  Text: {result[1]}, Confidence: {result[2]}, Box: {result[0]}")
 
             # Get the raw OCR results as handwritten text
-            handwritten_text = " ".join([result['text'] for result in formatted_results])
+            handwritten_text = " ".join([result[1] for result in results])
 
             # Debug print
             print(f"Field {field_name} - Raw OCR text: {handwritten_text}")
             print(
-                f"Field {field_name} - OCR confidence: {[result['confidence'] for result in formatted_results]}")
+                f"Field {field_name} - OCR confidence: {[result[2] for result in results]}")
 
             # Apply field-specific post-processing
             if field.field_type == FieldType.DATE:
@@ -359,34 +323,16 @@ class FormProcessor:
                             processed_cell = self._preprocess_field_image(
                                 cell_image, column.field_type)
 
-                            # Convert to color for PaddleOCR if needed
-                            if len(cell_image.shape) == 2:  # If grayscale
-                                cell_image_color = cv2.cvtColor(cell_image, cv2.COLOR_GRAY2BGR)
-                                processed_cell_color = cv2.cvtColor(processed_cell, cv2.COLOR_GRAY2BGR)
-                            else:
-                                cell_image_color = cell_image
-                                processed_cell_color = cv2.cvtColor(processed_cell, cv2.COLOR_GRAY2BGR)
-
                             # Try OCR on both original and preprocessed images
-                            ocr_results = self.reader.ocr(cell_image_color, cls=True)
-                            
-                            # If no results, try with preprocessed image
-                            if not ocr_results or not ocr_results[0]:
-                                ocr_results = self.reader.ocr(processed_cell_color, cls=True)
-
-                            # Format PaddleOCR results
-                            formatted_results = []
-                            if ocr_results and len(ocr_results) > 0 and ocr_results[0]:
-                                for line in ocr_results[0]:
-                                    if len(line) == 2:  # Ensure the line has both bbox and (text, confidence)
-                                        bbox, (text, confidence) = line
-                                        formatted_results.append({
-                                            'text': text,
-                                            'confidence': confidence
-                                        })
+                            ocr_results = self.reader.readtext(
+                                cell_image, detail=1)
+                            if not ocr_results:
+                                ocr_results = self.reader.readtext(
+                                    processed_cell, detail=1)
 
                             # Get the raw OCR results as handwritten text
-                            handwritten_text = " ".join([result['text'] for result in formatted_results])
+                            handwritten_text = " ".join(
+                                [result[1] for result in ocr_results])
 
                             # Apply field-specific post-processing based on column type
                             if column.field_type == FieldType.DATE:

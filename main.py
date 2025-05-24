@@ -3,9 +3,6 @@ from pdf_processor import PDFProcessor
 from form_template import FormTemplate
 from form_processor import FormProcessor
 from result_processor import ResultProcessor
-import easyocr
-import numpy as np
-from typing import Dict, Union, List
 from datetime import datetime
 
 
@@ -23,7 +20,9 @@ def get_available_pdfs():
 
 
 def get_user_pdf_selection():
-    """Let user select a PDF file to process"""
+    """Let user select a PDF file to process
+    Returns a path to the selected PDF file or None if no valid selection is made."""
+
     pdf_files, files_dir = get_available_pdfs()
 
     if not pdf_files:
